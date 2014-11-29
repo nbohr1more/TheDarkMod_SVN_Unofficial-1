@@ -160,9 +160,10 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 		} else {
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION );
 			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION );
+			}
 		}
 	}
-
+	
 	qglEnable(GL_VERTEX_PROGRAM_ARB);
 	qglEnable(GL_FRAGMENT_PROGRAM_ARB);
 
