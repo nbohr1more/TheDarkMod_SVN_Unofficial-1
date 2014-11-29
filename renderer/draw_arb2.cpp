@@ -23,6 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
+#include "draw_common.cpp"
 
 /*
 =========================================================================================
