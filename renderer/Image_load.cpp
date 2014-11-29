@@ -1174,8 +1174,8 @@ void idImage::WritePrecompressedImage() {
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 			header.ddspf.dwFourCC = DDS_MAKEFOURCC('D','X','T','5');
 			break;
-		case GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
-			header.ddspf.dwFourCC = DDS_MAKEFOURCC( 'R', 'G', 'T', 'C' ):
+		case GL_COMPRESSED_RED_GREEN_RGTC2_EXT:
+			header.ddspf.dwFourCC = DDS_MAKEFOURCC( 'R', 'G', 'T', 'C' );
 			break;
 		}
 	} else {
