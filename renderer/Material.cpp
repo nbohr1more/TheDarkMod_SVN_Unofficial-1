@@ -92,6 +92,7 @@ void idMaterial::CommonInit() {
 	fogLight = false;
 	blendLight = false;
 	ambientLight = false;
+	customLight = false;
 	noFog = false;
 	hasSubview = false;
 	allowOverlays = true;
@@ -1908,6 +1909,11 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		// ambientLight
 		else if ( !token.Icmp( "ambientLight" ) ) {
 			ambientLight = true;
+			continue;
+		}
+		// customLight
+		else if( !token.Icmp( "customLight" ) ) {
+			customLight = true;
 			continue;
 		}
 		// mirror
