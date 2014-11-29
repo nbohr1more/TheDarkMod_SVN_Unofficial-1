@@ -824,6 +824,10 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			if ( tr.backEndRenderer != BE_ARB2 ) {
 				continue;
 			}
+			// prevent stage processing of ARB programs in customLight def
+			if ( backEnd.vLight->lightShader->IsCustomLight() ) {
+				continue;
+			}	
 			if ( r_skipNewAmbient.GetBool() ) {
 				continue;
 			}
