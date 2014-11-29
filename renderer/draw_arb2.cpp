@@ -126,6 +126,15 @@ RB_ARB2_CreateDrawInteractions
 
 =============
 */
+
+int	stage;
+const idMaterial *shader;
+const shaderStage_t *pStage;
+const srfTriangles_t *tri;
+tri = surf->geo;
+shader = surf->material;
+newShaderStage_t *newStage = pStage->newStage;
+
 void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	if ( !surf ) {
 		return;
