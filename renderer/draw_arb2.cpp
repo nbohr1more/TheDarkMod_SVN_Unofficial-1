@@ -23,7 +23,8 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
-#include "draw_common.cpp"
+#include "material.h"
+#include "material.cpp"
 
 /*
 =========================================================================================
@@ -127,12 +128,6 @@ RB_ARB2_CreateDrawInteractions
 =============
 */
 
-int	stage;
-const idMaterial *shader;
-const shaderStage_t *pStage;
-const srfTriangles_t *tri;
-tri = surf->geo;
-shader = surf->material;
 newShaderStage_t *newStage = pStage->newStage;
 
 void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
@@ -145,8 +140,8 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	
 	// nbohr1more: light material defs can now define custom ARB interactions
 	if ( backEnd.vLight->lightShader->IsCustomLight() ) {
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage->vertexProgram );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, newStage->fragmentProgram );
+		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage.vertexProgram );
+		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, newStage.fragmentProgram );
 	// bind the vertex program
 	// rebb: support dedicated ambient - CVar and direct interactions can probably be removed, they're there mainly for performance testing
 	} else {
