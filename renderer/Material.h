@@ -479,6 +479,10 @@ public:
 
 						// NULL unless an image is explicitly specified in the shader with "lightFalloffShader <image>"
 	idImage	*			LightFalloffImage() const { return lightFalloffImage; }
+	
+	// customLight arb string
+	idStr 				GetInteractionVS() const { return interactionVS; };
+	idStr 				GetInteractionFS() const { return interactionFS; };
 
 	//------------------------------------------------------------------
 
@@ -620,7 +624,10 @@ private:
 private:
 	idStr				desc;				// description
 	idStr				renderBump;			// renderbump command options, without the "renderbump" at the start
-
+	
+	idStr				interactionVS;                  // customLight string
+	idStr				interactionFS;			// customLight string
+	
 	idImage	*			lightFalloffImage;
 
 	int					entityGui;			// draw a gui with the idUserInterface from the renderEntity_t
