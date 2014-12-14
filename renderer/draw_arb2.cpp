@@ -138,8 +138,8 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	
 	// nbohr1more: light material defs can now define custom ARB interactions
 	if ( backEnd.vLight->lightShader->IsCustomLight() ) {
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, backEnd.vLight->lightShader->vertexProgram );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, backEnd.vLight->lightShader->fragmentProgram );
+		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, backEnd.vLight->lightShader->GetInteractionVS() );
+		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, backEnd.vLight->lightShader->GetInteractionFS() );
 	// bind the vertex program
 	// rebb: support dedicated ambient - CVar and direct interactions can probably be removed, they're there mainly for performance testing
 	} else {
