@@ -1932,6 +1932,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			unsmoothedTangents = true;
 			continue;
 		}
+		
+		// ---> nbohr1more: modified from sikkpin feedback
+		// custom interaction
+		else if ( !token.Icmp( "interactionShader" ) ) {
+			if ( src.ReadTokenOnLine( &token ) ) {
+			interactionVS = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, idStr( token + ".vfp" ).c_str() );
+			interactionFP = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, idStr( token + ".vfp" ).c_str() );
+			}
+		continue;
+		}
 		// lightFallofImage <imageprogram>
 		// specifies the image to use for the third axis of projected
 		// light volumes
