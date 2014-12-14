@@ -24,6 +24,9 @@
 #include "MegaTexture.h"
 
 #define RENDERTOOLS_SKIP_ID			-1 // DARKMOD_LG_VIEWID
+#define TR_SCREEN_VIEW_ID			 0 // viewIDs of 0 and above are those drawn on sreen. Negative numbers are for special 
+									   // non-visible renders: light gem (TDM), Sikk's depth render (Doom3) etc. The player's view 
+									   // is 1 for single player mode, multiplayer uses 2+.
 
 class idRenderWorldLocal;
 
@@ -663,8 +666,6 @@ typedef struct {
 	glstate_t			glState;
 
 	int					c_copyFrameBuffer;
-
-	bool				drawShadows;		// Obsttorte 
 } backEndState_t;
 
 
@@ -735,9 +736,6 @@ public:
 	virtual void			UnCrop();
 	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
-
-	virtual void			setDrawShadows(bool ds);
-	virtual bool			getDrawShadows();
 
 public:
 	// internal functions
@@ -813,7 +811,6 @@ public:
 	class idGuiModel *		demoGuiModel;
 
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
-	bool					drawShadows;		// Obsttorte
 };
 
 extern backEndState_t		backEnd;
@@ -1323,7 +1320,7 @@ void	R_NV20_Init( void );
 void	RB_NV20_DrawInteractions( void );
 
 void	R_ARB2_Init( void );
-void	RB_ARB2_DrawInteractions( bool noshadows );
+void	RB_ARB2_DrawInteractions( void );
 void	R_ReloadARBPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
 

@@ -5158,18 +5158,29 @@ void idAI::Turn(const idVec3& pivotOffset) {
 	float turnAmount;
 	animFlags_t animflags;
 
-	if ( !turnRate ) {
+	if (!turnRate) {
 		return;
 	}
 
 	// check if the animator has marked this anim as non-turning
-	if ( !legsAnim.Disabled() && !legsAnim.AnimDone( 0 ) ) {
+	if (!legsAnim.Disabled() && !legsAnim.AnimDone(0)) {
 		animflags = legsAnim.GetAnimFlags();
-	} else {
+	}
+	else {
 		animflags = torsoAnim.GetAnimFlags();
 	}
-	if ( animflags.ai_no_turn ) {
+	if (animflags.ai_no_turn) {
 		return;
+	}
+
+	// Delay turning for custom idle anims --SteveL #3806
+	// grayman - but not when moving, because we can't miss our turns
+	if (!AI_FORWARD)
+	{
+		if ( WaitState() && ( idStr( WaitState() ) == "idle" || idStr( WaitState() ) == "idle_no_voice" ) )
+		{
+			return;
+		}
 	}
 
 	idVec3 startPos = viewAxis * pivotOffset;
@@ -6722,7 +6733,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// grayman #3857 - leave an ongoing search
 	if (m_searchID > 0)
 	{
-		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
+		gameLocal.m_searchManager->LeaveSearch(m_searchID, this);
 	}
 
 	ClearEnemy();
@@ -11400,10 +11411,17 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	   m_KoAlertImmuneState == 5 (no helmet), and their current alert level is
 	   below m_KoAlertImmuneState, a KO can occur only from behind.
     6. Finally, check the KO angles and determine if the blow has landed in the right place.
+	7. A sleeping AI can be KOed from the front, unless he's wearing a helmet with a facemask.
  */
 
 	bool immune2KO = false;
-	if ( spawnArgs.GetBool("is_civilian", "0") )
+	if ((GetMoveType() == MOVETYPE_SLEEP) && // grayman #3951
+		((minDotVert != 1.0f) && (minDotHoriz != 1.0f))) // cos(DEG2RAD(0.0f)) indicates elite faceguard helmet
+	{
+		// Rule #7 - no immunity
+		minDotVert = minDotHoriz = -1.0f; // cos(DEG2RAD(180.0f)) everyone gets KO'ed
+	}
+	else if (spawnArgs.GetBool("is_civilian", "0"))
 	{
 		// Rule #1
 	}
