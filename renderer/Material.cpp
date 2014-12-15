@@ -93,6 +93,8 @@ void idMaterial::CommonInit() {
 	blendLight = false;
 	ambientLight = false;
 	customLight = false;
+	interactionVS = "interaction.vfp";
+	interactionFS = "interaction.vfp";
 	noFog = false;
 	hasSubview = false;
 	allowOverlays = true;
@@ -1938,7 +1940,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		else if ( !token.Icmp( "interactionShader" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 			interactionVS = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, idStr( token + ".vfp" ).c_str() );
-			interactionFP = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, idStr( token + ".vfp" ).c_str() );
+			interactionFS = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, idStr( token + ".vfp" ).c_str() );
 			}
 		continue;
 		}
