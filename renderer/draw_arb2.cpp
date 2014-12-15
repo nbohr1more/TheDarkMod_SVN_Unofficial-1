@@ -138,8 +138,8 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	
 	// nbohr1more: light material defs can now define custom ARB interactions
 	if ( backEnd.vLight->lightShader->IsCustomLight() ) {
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, backEnd.vLight->lightShader->GetInteractionVS() );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, backEnd.vLight->lightShader->GetInteractionFS() );
+		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUSTOM_LIGHT );
+		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUSTOM_LIGHT );
 	// bind the vertex program
 	// rebb: support dedicated ambient - CVar and direct interactions can probably be removed, they're there mainly for performance testing
 	} else {
@@ -370,6 +370,12 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	// SteveL #3878: Particle softening applied by the engine
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_SOFT_PARTICLE, "soft_particle.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_SOFT_PARTICLE, "soft_particle.vfp" },
+	
+	// nbohr1more: customLight keyword
+	
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_CUSTOM_LIGHT, backEnd.vLight->lightShader->GetInteractionVS() },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_CUSTOM_LIGHT, backEnd.vLight->lightShader->GetInteractionFS() },
+
 
 	// additional programs can be dynamically specified in materials
 };
