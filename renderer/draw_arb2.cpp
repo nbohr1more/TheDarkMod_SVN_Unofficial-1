@@ -373,8 +373,8 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	
 	// nbohr1more: customLight keyword
 	
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_CUSTOM_LIGHT, backEnd.vLight->lightShader->newStage->vertexProgram },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_CUSTOM_LIGHT, backEnd.vLight->lightShader->newStage->fragmentProgram },
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_CUSTOM_LIGHT, backEnd.vLight->lightShader->GetInteractionVS() },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_CUSTOM_LIGHT, backEnd.vLight->lightShader->GetInteractionFS() },
 
 
 	// additional programs can be dynamically specified in materials
