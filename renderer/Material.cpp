@@ -1939,8 +1939,8 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		// custom interaction
 		else if ( !token.Icmp( "interactionShader" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
-			interactionVS = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, idStr( token + ".vfp" ).c_str() );
-			interactionFS = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, idStr( token + ".vfp" ).c_str() );
+			interactionVS = token.c_str();
+			interactionFS = token.c_str();
 			}
 		continue;
 		}
