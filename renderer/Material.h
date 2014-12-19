@@ -481,8 +481,8 @@ public:
 	idImage	*			LightFalloffImage() const { return lightFalloffImage; }
 	
 	// customLight arb string
-	idStr 				GetInteractionVS() const { return interactionVS; };
-	idStr 				GetInteractionFS() const { return interactionFS; };
+	char 				GetInteractionVS() const { return interactionVS; };
+	char				GetInteractionFS() const { return interactionFS; };
 
 	//------------------------------------------------------------------
 
@@ -625,8 +625,8 @@ private:
 	idStr				desc;				// description
 	idStr				renderBump;			// renderbump command options, without the "renderbump" at the start
 	
-	idStr				interactionVS;                  // customLight string
-	idStr				interactionFS;			// customLight string
+	char				interactionVS;                  // customLight string
+	char				interactionFS;			// customLight string
 	
 	idImage	*			lightFalloffImage;
 
