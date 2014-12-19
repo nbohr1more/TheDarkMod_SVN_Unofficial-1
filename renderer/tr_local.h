@@ -1354,6 +1354,10 @@ typedef enum {
 	VPROG_SOFT_PARTICLE,
 	FPROG_SOFT_PARTICLE,
 	//
+	// nbohr1more: customLight
+	VPROG_CUSTOM_LIGHT,
+	FPROG_CUSTOM_LIGHT,
+	
 	PROG_USER
 } program_t;
 
