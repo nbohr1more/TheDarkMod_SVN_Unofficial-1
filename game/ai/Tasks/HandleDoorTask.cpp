@@ -288,13 +288,13 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 	{
 		if (_doorHandlingState != EStateMovingToMidPos)
 		{
-			owner->MoveToPosition(_midPos,HANDLE_DOOR_ACCURACY);
+			owner->MoveToPosition(_midPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
 			_doorHandlingState = EStateMovingToMidPos;
 		}
 	}
 	else
 	{
-		owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY);
+		owner->MoveToPosition(_backPos, HANDLE_DOOR_ACCURACY); // don't run to backside of door to close it
 		_doorHandlingState = EStateMovingToBackPos;
 	}
 }
@@ -760,6 +760,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				float dist = dir.LengthFast();
 				if (masterUser == owner)
 				{
+					if ( owner->AI_MOVE_DONE )
+					{
+						owner->SetMoveAccuracy(owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
+					}
 					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
 						(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 					{
@@ -771,6 +775,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						break;
 					}
 
+					//owner->PrintGoalData(_frontPos, 8);
 					if (dist <= QUEUE_DISTANCE) // grayman #2345 - this was the next layer up
 					{
 						if (_doorInTheWay)
@@ -981,6 +986,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				_doorHandlingState = EStateApproachingDoor;
 			}
+			else
+			{
+				//owner->PrintGoalData(_safePos, 2);
+			}
 			break;
 		case EStateMovingToFrontPos:
 			if (!frobDoor->IsOpen()) // closed
@@ -1001,6 +1010,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 
+				if ( owner->AI_MOVE_DONE )
+				{
+					owner->SetMoveAccuracy(owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
+				}
+
 				if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
 					(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 				{
@@ -1018,6 +1032,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						// TODO: position not reachable, need a better one
 					}
+					else
+					{
+						//owner->PrintGoalData(_frontPos, 9);
+					}
+				}
+				else
+				{
+					//owner->PrintGoalData(_frontPos, 3);
 				}
 			}
 			else // open
@@ -1051,6 +1073,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true;
 					}
 
+					if ( owner->AI_MOVE_DONE )
+					{
+						owner->SetMoveAccuracy(owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
+					}
+
 					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) ||
 						((closedPos - ownerOrigin).LengthFast() < 100)) // grayman #3390 - are we close enough?
 					{
@@ -1070,6 +1097,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else // can't fit through door, can't open it, see if I need to move out of the way
 					{
+						//owner->PrintGoalData(_frontPos, 4);
 						_doorHandlingState = EStateApproachingDoor;
 					}
 				}
@@ -1560,6 +1588,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// reached mid position?
 				if (owner->AI_MOVE_DONE)
 				{
+					owner->SetMoveAccuracy(owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
 					if (owner->ReachedPos(_midPos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL)) // grayman #2345
 					{
 						return true;
@@ -1572,6 +1601,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
+					//owner->PrintGoalData(_midPos, 5);
 					if (_canHandleDoor) // grayman #2712
 					{
 						PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to midPos
@@ -1669,6 +1699,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				if (owner->AI_MOVE_DONE)
 				{
+					owner->SetMoveAccuracy(HANDLE_DOOR_ACCURACY); // grayman #4039
 					if (owner->ReachedPos(_backPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
 						(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 					{
@@ -1715,6 +1746,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else // grayman #2712
 				{
+					//owner->PrintGoalData(_backPos, 6);
 					PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to _backPos
 
 					// grayman #3643 - if you've changed state, you might

@@ -1545,7 +1545,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					SetMoveType( int moveType );
 	void					SetMoveType( idStr moveType );
 
-
+	void					SetMoveAccuracy(float accuracy); // grayman #4039
 	
 	/**
 	* This is a virtual override of the idActor method.  It takes lighting levels into consideration
@@ -1941,6 +1941,10 @@ public:
 	bool					m_lipSyncActive; /// True iff we're currently lip syncing
 	int						m_lipSyncAnim; /// The number of the animation that we are lipsyncing to
 	int						m_lipSyncEndTimer; /// Time at which to stop lip syncing
+
+	// grayman #3857 - bark stuff
+	idStr					m_barkName; // The name of the bark
+	int						m_barkEndTime; // When the bark will end
 	
 	bool					DrawWeapon(ECombatType type); // grayman #3331 // grayman #3775
 	void					SheathWeapon();
@@ -1974,6 +1978,9 @@ public:
 
 	// grayman #3643 - get which side of a door we're on
 	int						GetDoorSide(CFrobDoor* frobDoor);
+
+	// for debugging circling problems
+	//void					PrintGoalData(idVec3 goal, int tag);
 
 	//
 	// ai/ai_events.cpp

@@ -386,7 +386,7 @@ bool ResolveMovementBlockTask::Room2Pass(idAI* owner) // grayman #2345
 			result = true;
 		}
 	}
-	
+
 	return result;
 }
 
@@ -407,6 +407,14 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 {
 	idVec3 right, forward;
 
+	// grayman #3725 - if still walking and not turning, but not getting
+	// anywhere, stop moving, to allow yourself to turn and become non-solid
+	float traveledPrev = owner->movementSubsystem->GetPrevTraveled(false).LengthFast();
+	if (!owner->AI_MOVE_DONE && !_turning && (traveledPrev < 0.1)) // grayman #2345
+	{
+		owner->StopMove(MOVE_STATUS_DONE);
+	}
+	
 	if (owner->AI_MOVE_DONE && !_turning && !owner->movementSubsystem->IsWaiting()) // grayman #2345 - if already waiting, no need to do this section
 	{
 		// grayman #3725 - turn perpendicular to the direction
@@ -443,7 +451,10 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 
 			// If there's no room to get around you, become non-solid
 
-			if ((owner->AI_AlertIndex == ERelaxed) && !Room2Pass(owner))
+			// grayman - With coordinated searching, AI are less likely to be bunching up,
+			// so remove the requirement that the AI be in ERelaxed to become non-solid
+
+			if (/*(owner->AI_AlertIndex == ERelaxed) && */!Room2Pass(owner))
 			{
 				BecomeNonSolid(owner);
 			}

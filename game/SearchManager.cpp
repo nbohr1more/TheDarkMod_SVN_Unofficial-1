@@ -72,9 +72,9 @@ Search* CSearchManager::StartNewSearch(idAI* ai)
 	idVec3 minExclusionBounds(memory.alertPos - searchExclusionVolume);
 	idVec3 maxExclusionBounds(memory.alertPos + searchExclusionVolume);
 
-	idBounds searchBounds = idBounds(minBounds,maxBounds);
-	idBounds searchExclusionBounds = idBounds(minExclusionBounds,maxExclusionBounds);
-	
+	idBounds searchBounds = idBounds(minBounds, maxBounds);
+	idBounds searchExclusionBounds = idBounds(minExclusionBounds, maxExclusionBounds);
+
 	// grayman #2422 - to prevent AI from going upstairs or downstairs
 	// to search spots over/under where they should be searching,
 	// limit the search to the floor where the alert occurred.
@@ -95,64 +95,73 @@ Search* CSearchManager::StartNewSearch(idAI* ai)
 	search->_guardSpotsReady = false; // whether the list of guard spots is ready for use or not
 	search->_searcherCount = 0; // number of searchers
 
-	switch(memory.alertType)
+	if (ai->spawnArgs.GetBool("canSearchCooperatively", "1"))
 	{
-	case ai::EAlertTypeSuspicious:
-	case ai::EAlertTypeSuspiciousVisual:
-		search->_assignmentFlags = SEARCH_SUSPICIOUS;
-		break;
-	case ai::EAlertTypeEnemy:
-		search->_assignmentFlags = SEARCH_ENEMY;
-		break;
-	case ai::EAlertTypeFailedKO:
-		search->_assignmentFlags = SEARCH_FAILED_KO;
-		break;
-	case ai::EAlertTypeWeapon:
-		search->_assignmentFlags = SEARCH_WEAPON;
-		break;
-	case ai::EAlertTypeBlinded:
-		search->_assignmentFlags = SEARCH_BLINDED;
-		break;
-	case ai::EAlertTypeDeadPerson:
-		search->_assignmentFlags = SEARCH_DEAD;
-		break;
-	case ai::EAlertTypeUnconsciousPerson:
-		search->_assignmentFlags = SEARCH_UNCONSCIOUS;
-		break;
-	case ai::EAlertTypeBlood:
-		search->_assignmentFlags = SEARCH_BLOOD;
-		break;
-	case ai::EAlertTypeLightSource:
-		search->_assignmentFlags = SEARCH_LIGHT;
-		break;
-	case ai::EAlertTypeMissingItem:
-		search->_assignmentFlags = SEARCH_MISSING;
-		break;
-	case ai::EAlertTypeBrokenItem:
-		search->_assignmentFlags = SEARCH_BROKEN;
-		break;
-	case ai::EAlertTypeDoor:
-		search->_assignmentFlags = SEARCH_DOOR;
-		break;
-	case ai::EAlertTypeSuspiciousItem:
-		search->_assignmentFlags = SEARCH_SUSPICIOUSITEM;
-		break;
-	case ai::EAlertTypeRope:
-		search->_assignmentFlags = SEARCH_ROPE;
-		break;
-	case ai::EAlertTypeHitByProjectile:
-		search->_assignmentFlags = SEARCH_PROJECTILE;
-		break;
-	case ai::EAlertTypeHitByMoveable:
-		search->_assignmentFlags = SEARCH_MOVEABLE;
-		break;
-	case ai::EAlertTypePickedPocket:
-		search->_assignmentFlags = SEARCH_PICKED_POCKET;
-		break;
-	default: // grayman #3857
-	case ai::EAlertTypeNone:
-		search->_assignmentFlags = SEARCH_NOTHING;
-		break;
+		search->_isCoopSearch = true;
+		switch (memory.alertType)
+		{
+		case ai::EAlertTypeSuspicious:
+		case ai::EAlertTypeSuspiciousVisual:
+			search->_assignmentFlags = SEARCH_SUSPICIOUS;
+			break;
+		case ai::EAlertTypeEnemy:
+			search->_assignmentFlags = SEARCH_ENEMY;
+			break;
+		case ai::EAlertTypeFailedKO:
+			search->_assignmentFlags = SEARCH_FAILED_KO;
+			break;
+		case ai::EAlertTypeWeapon:
+			search->_assignmentFlags = SEARCH_WEAPON;
+			break;
+		case ai::EAlertTypeBlinded:
+			search->_assignmentFlags = SEARCH_BLINDED;
+			break;
+		case ai::EAlertTypeDeadPerson:
+			search->_assignmentFlags = SEARCH_DEAD;
+			break;
+		case ai::EAlertTypeUnconsciousPerson:
+			search->_assignmentFlags = SEARCH_UNCONSCIOUS;
+			break;
+		case ai::EAlertTypeBlood:
+			search->_assignmentFlags = SEARCH_BLOOD;
+			break;
+		case ai::EAlertTypeLightSource:
+			search->_assignmentFlags = SEARCH_LIGHT;
+			break;
+		case ai::EAlertTypeMissingItem:
+			search->_assignmentFlags = SEARCH_MISSING;
+			break;
+		case ai::EAlertTypeBrokenItem:
+			search->_assignmentFlags = SEARCH_BROKEN;
+			break;
+		case ai::EAlertTypeDoor:
+			search->_assignmentFlags = SEARCH_DOOR;
+			break;
+		case ai::EAlertTypeSuspiciousItem:
+			search->_assignmentFlags = SEARCH_SUSPICIOUSITEM;
+			break;
+		case ai::EAlertTypeRope:
+			search->_assignmentFlags = SEARCH_ROPE;
+			break;
+		case ai::EAlertTypeHitByProjectile:
+			search->_assignmentFlags = SEARCH_PROJECTILE;
+			break;
+		case ai::EAlertTypeHitByMoveable:
+			search->_assignmentFlags = SEARCH_MOVEABLE;
+			break;
+		case ai::EAlertTypePickedPocket:
+			search->_assignmentFlags = SEARCH_PICKED_POCKET;
+			break;
+		default: // grayman #3857
+		case ai::EAlertTypeNone:
+			search->_assignmentFlags = SEARCH_NOTHING;
+			break;
+		}
+	}
+	else // swarm search
+	{
+		search->_isCoopSearch = false;
+		search->_assignmentFlags = SEARCH_SWARM; // unlimited searchers
 	}
 
 	search->_eventID = memory.currentSearchEventID; // the ID of the suspicious event that caused this search
@@ -192,11 +201,21 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 	// AI will leave his previous search and create a search for the new KO'ed body, so maybe
 	// this isn't a big problem.
 	Search *search = GetSearchWithEventID(memory.currentSearchEventID);
+	bool canSearchCooperatively = ai->spawnArgs.GetBool("canSearchCooperatively", "1");
 	if (search)
 	{
-		searchID = search->_searchID;
+		// match the AI's preference with the search type
+		if (search->_isCoopSearch && canSearchCooperatively)
+		{
+			searchID = search->_searchID;
+		}
+		else if (!search->_isCoopSearch && !canSearchCooperatively)
+		{
+			searchID = search->_searchID;
+		}
 	}
-	else // no search yet
+
+	if (searchID < 0) // no search yet
 	{
 		// See if there's a search at or near the search location using the correct event type.
 
@@ -206,7 +225,8 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 		if ((se == NULL) || !searchPointIsValid)
 		{
 			// Drop the ai's alert level
-			ai->SetAlertLevel(ai->thresh_3 - 0.1);
+			// ai->SetAlertLevel(ai->thresh_3 - 0.1); // grayman - DON'T DO THIS because it causes
+													  // the stealth score to rise dramatically during player sightings
 			memory.currentSearchEventID = -1;
 			return -1;
 		}
@@ -219,7 +239,16 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 			{
 				return -1; // has already searched this event, abort request
 			}
-			searchID = search->_searchID;
+
+			// match the AI's preference with the search type
+			if (search->_isCoopSearch && canSearchCooperatively)
+			{
+				searchID = search->_searchID;
+			}
+			else if (!search->_isCoopSearch && !canSearchCooperatively)
+			{
+				searchID = search->_searchID;
+			}
 		}
 	}
 
@@ -427,8 +456,20 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 
 				if (assignment->_limits.ContainsPoint(nextSpot))
 				{
-					search->_hidingSpotIndexes[i] = -1; // don't assign this good spot again
-					return true;
+					// can we walk to this spot?
+
+					idVec3 aiOrigin = ai->GetPhysics()->GetOrigin();
+					int aiAreaNum = ai->PointReachableAreaNum(aiOrigin, 1.0f);
+					aasPath_t path;
+					int nextSpotAreaNum = ai->PointReachableAreaNum(nextSpot);
+					if (nextSpotAreaNum > 0)
+					{
+						if (ai->PathToGoal(path, aiAreaNum, aiOrigin, nextSpotAreaNum, nextSpot, ai))
+						{
+							search->_hidingSpotIndexes[i] = -1; // don't assign this good spot again
+							return true; // calling method will read nextSpot
+						}
+					}
 				}
 
 				return false; // didn't find one this time, maybe next time we'll find one
@@ -542,143 +583,227 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		return false;
 	}
 
+	// this ai can only be an active searcher
+	// if he can walk to the search origin
+
+	int toAreaNum = ai->PointReachableAreaNum(search->_origin);
+	bool canBeActiveSearcher = true;
+	if (toAreaNum > 0)
+	{
+		idVec3 aiOrigin = ai->GetPhysics()->GetOrigin();
+		int aiAreaNum = ai->PointReachableAreaNum(aiOrigin, 1.0f);
+		aasPath_t path;
+		if (!ai->PathToGoal(path, aiAreaNum, aiOrigin, toAreaNum, search->_origin, ai))
+		{
+			canBeActiveSearcher = false;
+		}
+	}
+	else
+	{
+		canBeActiveSearcher = false;
+	}
+
+/*	A "swarm" search allows unlimited active searchers. AI such as zombies,
+	which have no cooperative abilities, would use this type of search.
+
+	AI that can search cooperatively will be assigned as active searchers,
+	guards, or observers. A cooperative search can have at most 2 active searchers.
+
+	For swarm searches:
+
+		All searchers are given the same search information, so
+		they will share the list of hiding spots. The hiding spots
+		will be assigned individually to each requesting searcher,
+		so that no two searchers with search the same spot.
+
+	For cooperative searches:
+
+		If no one's been assigned yet, the first AI to join will be
+		given an "active search" based on the origin and boundaries
+		set up when the AI was alerted.
+
+		If the search already has a single searcher, the search area
+		will be divided equally between the two searchers.
+
+		If more than 2 AI join this search, they will be given guard
+		assignments that will place them at nearby doors or visportals
+		that lead out of the area, or "guard entities" placed by the
+		mapper. Once the guard assignments are filled, new searchers
+		will be placed randomly outside the search area as observers.
+*/
+
+	float outerRadius = 0;
+	idBounds searchBounds;
+	idBounds searchExclusionBounds;
+
 	// How many assignments does this search have?
-
-	// If no one's been assigned yet, the first AI to join will be
-	// given an "active search" based on the origin and boundaries
-	// set up when the AI was alerted.
-
-	// If the search already has a single searcher, the search area
-	// will be divided equally between the two searchers.
-
-	// If more than 2 AI join this search, they will be given guard
-	// assignments that will place them at nearby doors or visportals
-	// that lead out of the area, or "guard entities" placed by the
-	// mapper. Once the guard assignments are filled, new searchers
-	// will be placed randomly outside the search area as observers.
 
 	int numAssignments = search->_assignments.Num();
 	int takeAssignmentIndex = -1; // if taking over an abandoned assignment, fill in this index
 
-	float innerRadius = 0;
-	float outerRadius = 0;
-	idBounds searchBounds;
-	idBounds searchExclusionBounds;
+	bool canSearchCooperatively = ai->spawnArgs.GetBool("canSearchCooperatively", "1");
 	smRole_t searcherRole = E_ROLE_NONE; // no assignment yet
 
-	// Active searchers are allowed to be armed or unarmed/civilian.
-
-	// Does this search require active searchers? All searches should
-	// require active searchers, but just in case ...
-
-	if (search->_assignmentFlags & (SEARCH_SEARCHER_MILL|SEARCH_SEARCH))
+	if (search->_isCoopSearch && canSearchCooperatively)
 	{
-		if (numAssignments == 0)
+		// If there are 0 or 1 assignment slots for
+		// this search, and you can't be an active searcher, then you
+		// can't join in this frame. Once the number of slots goes above 2,
+		// the active searcher roles are assigned, and you can join as a guard
+		// or an observer.
+		if ((numAssignments < 2) && !canBeActiveSearcher)
 		{
-			// A single AI gets to search the entire search area.
-
-			innerRadius = 0;
-			idVec3 searchSize = search->_limits.GetSize();
-			float xRad = searchSize.x/2.0f;
-			float yRad = searchSize.y/2.0f;
-			outerRadius = idMath::Sqrt(xRad*xRad + yRad*yRad);
-			search->_outerRadius = outerRadius;
-			searchBounds = search->_limits;
-			searcherRole = E_ROLE_SEARCHER;
+			// Can't join this search. Sorry.
+			return false;
 		}
-		else if (numAssignments == 1)
+
+		// Active searchers are allowed to be armed or unarmed/civilian.
+
+		// Does this search require active searchers? All searches should
+		// require active searchers, but just in case ...
+
+		if (search->_assignmentFlags & (SEARCH_SEARCHER_MILL | SEARCH_SEARCH))
 		{
-			// Is the first assignment slot available?
-			if (search->_assignments[0]._searcher == NULL)
+			if (numAssignments == 0)
 			{
-				takeAssignmentIndex = 0;
-				searcherRole = search->_assignments[0]._searcherRole;
+				// A single AI gets to search the entire search area.
+
+				idVec3 searchSize = search->_limits.GetSize();
+				float xRad = searchSize.x / 2.0f;
+				float yRad = searchSize.y / 2.0f;
+				outerRadius = idMath::Sqrt(xRad*xRad + yRad*yRad);
+				search->_outerRadius = outerRadius;
+				searchBounds = search->_limits;
+				searcherRole = E_ROLE_SEARCHER;
 			}
-			else if (search->_outerRadius <= SEARCH_RADIUS_ONE_SEARCHER)
+			else if (numAssignments == 1)
 			{
-				// there isn't enough search area to have more than one searcher
-			}
-			else
-			{
-				// Divide the search area in half between the two searchers.
-				// The first AI searches the inner half of the overall area, and
-				// the second AI searches the outer half. If one or the other
-				// leaves the search, the search area of the remaining AI
-				// remains the same.
-
-				outerRadius = search->_assignments[0]._outerRadius; // inherit the outer radius from the first searcher
-
-				// Split search area in half.
-
-				idBounds searchBounds1;
-				idBounds searchBounds2;
-				searchBounds1 = searchBounds2 = search->_limits;
-				idVec3 size = searchBounds1.GetSize();
-				if (size.x > size.y)
+				// Is the first assignment slot available?
+				if (search->_assignments[0]._searcher == NULL)
 				{
-					searchBounds1[1].x -= size.x/2.0f;
-					searchBounds2[0].x += size.x/2.0f;
+					takeAssignmentIndex = 0;
+					searcherRole = search->_assignments[0]._searcherRole;
+				}
+				else if (search->_outerRadius <= SEARCH_RADIUS_ONE_SEARCHER)
+				{
+					// there isn't enough search area to have more than one searcher
 				}
 				else
 				{
-					searchBounds1[1].y -= size.y/2.0f;
-					searchBounds2[0].y += size.y/2.0f;
+					// Divide the search area in half between the two searchers.
+					// The first AI searches the inner half of the overall area, and
+					// the second AI searches the outer half. If one or the other
+					// leaves the search, the search area of the remaining AI
+					// remains the same.
+
+					outerRadius = search->_assignments[0]._outerRadius; // inherit the outer radius from the first searcher
+
+					// Split search area in half.
+
+					idBounds searchBounds1;
+					idBounds searchBounds2;
+					searchBounds1 = searchBounds2 = search->_limits;
+					idVec3 size = searchBounds1.GetSize();
+					if (size.x > size.y)
+					{
+						searchBounds1[1].x -= size.x / 2.0f;
+						searchBounds2[0].x += size.x / 2.0f;
+					}
+					else
+					{
+						searchBounds1[1].y -= size.y / 2.0f;
+						searchBounds2[0].y += size.y / 2.0f;
+					}
+					search->_assignments[0]._limits = searchBounds1;
+					searchBounds = searchBounds2;
+					searcherRole = E_ROLE_SEARCHER;
 				}
-				search->_assignments[0]._limits = searchBounds1;
-				searchBounds = searchBounds2;
-				searcherRole = E_ROLE_SEARCHER;
 			}
-		}
-		else if (numAssignments >= 2)
-		{
-			// Is the first assignment slot available?
-			if (search->_assignments[0]._searcher == NULL)
+			else if (numAssignments >= 2)
 			{
-				takeAssignmentIndex = 0;
-				searcherRole = search->_assignments[0]._searcherRole;
-			}
-			// Is the second assignment slot available?
-			else if (search->_assignments[1]._searcher == NULL)
-			{
-				takeAssignmentIndex = 1;
-				searcherRole = search->_assignments[1]._searcherRole;
-			}
-		}
-	}
-
-	if (searcherRole == E_ROLE_NONE)
-	{
-		// No role assigned. You'll either be a guard or an observer.
-		// If you're unarmed or a civilian, or your health is low, you
-		// can't be a guard, so you'll be an observer until something
-		// chases you away. Don't worry here about the number of guard
-		// spots available. If SearchingState finds there are none, it
-		// will change your role to an observer.
-
-		idVec3 searchSize = search->_limits.GetSize();
-		float xRad = searchSize.x/2.0f;
-		float yRad = searchSize.y/2.0f;
-
-		// outerRadius defines the search perimeter, where observers will stand
-		outerRadius = Max(SEARCH_MIN_OBS_DISTANCE,idMath::Sqrt(xRad*xRad + yRad*yRad));
-		innerRadius = 0; // no active searching
-		if (!ai->IsAfraid()) // armed AI becomes a guard
-		{
-			// Do we need guards for this search?
-
-			if (search->_assignmentFlags & (SEARCH_GUARD_MILL|SEARCH_GUARD))
-			{
-				searcherRole = E_ROLE_GUARD;
+				// Is the first assignment slot available?
+				if ((search->_assignments[0]._searcher == NULL) && canBeActiveSearcher)
+				{
+					takeAssignmentIndex = 0;
+					searcherRole = search->_assignments[0]._searcherRole;
+				}
+				// Is the second assignment slot available?
+				else if ((search->_assignments[1]._searcher == NULL) && canBeActiveSearcher)
+				{
+					takeAssignmentIndex = 1;
+					searcherRole = search->_assignments[1]._searcherRole;
+				}
 			}
 		}
 
 		if (searcherRole == E_ROLE_NONE)
 		{
-			// Everyone else is unfit to guard a spot and is relegated to observing.
-			// Do we need observers for this search?
-			if (search->_assignmentFlags & (SEARCH_OBSERVER_MILL|SEARCH_OBSERVE))
+			// No role assigned. You'll either be a guard or an observer.
+			// If you're unarmed or a civilian, or your health is low, you
+			// can't be a guard, so you'll be an observer until something
+			// chases you away. Don't worry here about the number of guard
+			// spots available. If SearchingState finds there are none, it
+			// will change your role to an observer.
+
+			idVec3 searchSize = search->_limits.GetSize();
+			float xRad = searchSize.x / 2.0f;
+			float yRad = searchSize.y / 2.0f;
+
+			// outerRadius defines the search perimeter, where observers will stand
+			outerRadius = Max(SEARCH_MIN_OBS_DISTANCE, idMath::Sqrt(xRad*xRad + yRad*yRad));
+			if (!ai->IsAfraid()) // armed AI becomes a guard
 			{
-				searcherRole = E_ROLE_OBSERVER;
+				// Do we need guards for this search?
+
+				if (search->_assignmentFlags & (SEARCH_GUARD_MILL | SEARCH_GUARD))
+				{
+					searcherRole = E_ROLE_GUARD;
+					searchBounds = search->_limits; // set, but not used by a guard
+				}
+			}
+
+			if (searcherRole == E_ROLE_NONE)
+			{
+				// Everyone else is unfit to guard a spot and is relegated to observing.
+				// Do we need observers for this search?
+				if (search->_assignmentFlags & (SEARCH_OBSERVER_MILL | SEARCH_OBSERVE))
+				{
+					searcherRole = E_ROLE_OBSERVER;
+					searchBounds = search->_limits; // set, but not used by an observer
+				}
+			}
+		}
+	}
+	else if (!search->_isCoopSearch && !canSearchCooperatively)
+	{
+		if (!canBeActiveSearcher)
+		{
+			// Can't join this search. Sorry.
+			return false;
+		}
+
+		// By definition, swarm searchers only involve active
+		// searchers that don't mill first.
+
+		// All AI get to search the entire search area.
+
+		idVec3 searchSize = search->_limits.GetSize();
+		float xRad = searchSize.x / 2.0f;
+		float yRad = searchSize.y / 2.0f;
+		outerRadius = idMath::Sqrt(xRad*xRad + yRad*yRad);
+		search->_outerRadius = outerRadius;
+		searchBounds = search->_limits;
+		searcherRole = E_ROLE_SEARCHER;
+
+		// find the first available assignment, if any have been abandoned
+
+		takeAssignmentIndex = -1;
+		for ( int i = 0 ; i < numAssignments ; i++ )
+		{
+			if (search->_assignments[i]._searcher == NULL)
+			{
+				takeAssignmentIndex = i;
+				break;
 			}
 		}
 	}
@@ -705,7 +830,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		assignment = &search->_assignments[takeAssignmentIndex];
 		assignment->_searcher = ai; // reactivate the deactivated assignment
 	}
-	else
+	else // create new assignment
 	{
 		Assignment newAssignment;
 		assignment = &newAssignment;
@@ -826,9 +951,6 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 		return;
 	}
 
-	smRole_t vacatedRole = E_ROLE_NONE;
-	int vacatedIndex = -1;
-
 	bool assignmentFound = false;
 	for (int i = 0 ; i < numAssignments ; i++)
 	{
@@ -836,8 +958,6 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 		if (assignment->_searcher == ai)
 		{
 			assignmentFound = true;
-			vacatedRole = assignment->_searcherRole; // remember this if we need to backfill below
-			vacatedIndex = i; // remember this if we need to backfill below
 			assignment->_searcher = NULL; // deactivate the assignment
 			search->_searcherCount--;
 			break;
@@ -1095,6 +1215,7 @@ void CSearchManager::Save(idSaveGame* savefile)
 
 		savefile->WriteInt(search->_searchID);
 		savefile->WriteInt(search->_eventID);
+		savefile->WriteBool(search->_isCoopSearch);
 		savefile->WriteInt(search->_hidingSpotSearchHandle);
 		savefile->WriteVec3(search->_origin);
 		savefile->WriteBounds(search->_limits);
@@ -1156,6 +1277,7 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 
 		savefile->ReadInt(search->_searchID);
 		savefile->ReadInt(search->_eventID);
+		savefile->ReadBool(search->_isCoopSearch);
 		savefile->ReadInt(search->_hidingSpotSearchHandle);
 		savefile->ReadVec3(search->_origin);
 		savefile->ReadBounds(search->_limits);
@@ -1213,6 +1335,7 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 		//DebugPrintHidingSpots(search);
 	}
 }
+
 /*
 // prints hiding spots
 void CSearchManager::DebugPrintHidingSpots(Search* search)
@@ -1231,7 +1354,9 @@ void CSearchManager::DebugPrintHidingSpots(Search* search)
 		}
 	}
 }
+*/
 
+/*
 // prints search contents
 void CSearchManager::DebugPrintSearch(Search* search)
 {
@@ -1239,6 +1364,7 @@ void CSearchManager::DebugPrintSearch(Search* search)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("_hidingSpotSearchHandle = %d\r",search->_hidingSpotSearchHandle);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("              _searchID = %d\r",search->_searchID);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               _eventID = %d\r",search->_eventID);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          _isCoopSearch = %d\r",search->_isCoopSearch);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("             event type = %d\r",(int)gameLocal.FindSuspiciousEvent(search->_eventID)->type);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                _origin = [%s]\r",search->_origin.ToString());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                _limits = [%s]\r",search->_limits.ToString());
@@ -1291,7 +1417,6 @@ void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 
 void CSearchManager::ProcessSearches()
 {
-	// If the player is dead, all searchers should leave their searches.
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
@@ -1334,6 +1459,16 @@ void CSearchManager::ProcessSearches()
 
 		// There is at least one searcher.
 
+		// If this is a swarm search, no other checks are necessary.
+		// Since all searchers are active searchers, there's no point
+		// trying to backfill the first two slots, or care about the
+		// ranks of the active searchers.
+
+		if (!search->_isCoopSearch)
+		{
+			continue;
+		}
+
 		// Are there no active searchers? If so,
 		// backfill with someone else if available. Only backfill if
 		// there are no active searchers, otherwise things start to
@@ -1370,14 +1505,22 @@ void CSearchManager::ProcessSearches()
 				{
 					Assignment *assignment = &search->_assignments[j];
 					idAI* searcher = assignment->_searcher;
-					if ((searcher != NULL) &&
-						(assignment->_searcherRole == E_ROLE_OBSERVER) &&
-						(searcher->rank < lowestRank) &&
-						(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+					if (searcher != NULL)
 					{
-						bestCandidate = searcher;
-						bestAssignment = assignment;
-						lowestRank = searcher->rank;
+						// this ai can only be an active searcher
+						// if he can walk to the search origin
+						int toAreaNum = searcher->PointReachableAreaNum(search->_origin);
+						bool canBeActiveSearcher = (toAreaNum != 0);
+
+						if (canBeActiveSearcher &&
+							(assignment->_searcherRole == E_ROLE_OBSERVER) &&
+							(searcher->rank < lowestRank) &&
+							(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+						{
+							bestCandidate = searcher;
+							bestAssignment = assignment;
+							lowestRank = searcher->rank;
+						}
 					}
 				}
 
@@ -1390,14 +1533,22 @@ void CSearchManager::ProcessSearches()
 					{
 						Assignment *assignment = &search->_assignments[j];
 						idAI* searcher = assignment->_searcher;
-						if ((searcher != NULL) &&
-							(assignment->_searcherRole == E_ROLE_GUARD) &&
-							(searcher->rank < lowestRank) &&
-							(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+						if (searcher != NULL)
 						{
-							bestCandidate = searcher;
-							bestAssignment = assignment;
-							lowestRank = searcher->rank;
+							// this ai can only be an active searcher
+							// if he can walk to the search origin
+							int toAreaNum = searcher->PointReachableAreaNum(search->_origin);
+							bool canBeActiveSearcher = (toAreaNum != 0);
+
+							if (canBeActiveSearcher &&
+								(assignment->_searcherRole == E_ROLE_GUARD) &&
+								(searcher->rank < lowestRank) &&
+								(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+							{
+								bestCandidate = searcher;
+								bestAssignment = assignment;
+								lowestRank = searcher->rank;
+							}
 						}
 					}
 				}
@@ -1472,8 +1623,14 @@ void CSearchManager::ProcessSearches()
 					{
 						if (assignment->_searcher->rank < lowestGuardOrObserverRank)
 						{
-							lowestGuardOrObserverAssignmentIndex = j;
-							lowestGuardOrObserverRank = assignment->_searcher->rank;
+							// this ai can only be an active searcher
+							// if he can walk to the search origin
+							int toAreaNum = assignment->_searcher->PointReachableAreaNum(search->_origin);
+							if (toAreaNum != 0)
+							{
+								lowestGuardOrObserverAssignmentIndex = j;
+								lowestGuardOrObserverRank = assignment->_searcher->rank;
+							}
 						}
 					}
 				}
